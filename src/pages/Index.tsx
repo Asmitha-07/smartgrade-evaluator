@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 
 const MOCK_RESULT: EvaluationResult = {
   totalMarksObtained: 26,
-  maxMarks: 60,
+  maxMarks: 50,
   averageScore: 1.4,
   maxAverageScore: 3.2,
   grade: "D",
-  percentage: 43,
+  percentage: 52,
   overallFeedback:
     "Needs significant revision. Review the concepts thoroughly. The student shows partial understanding in some areas but key definitions and explanations are missing or incorrect in several questions.",
   questionsAttended: 14,
@@ -42,14 +42,16 @@ const MOCK_RESULT: EvaluationResult = {
     {
       name: "Part B",
       questionsInPaper: 5,
-      questionsToAnswer: 3,
-      marksPerQuestion: 10,
-      totalMarks: 30,
-      markSplit: "3 × 10 = 30",
+      questionsToAnswer: 5,
+      marksPerQuestion: 2,
+      totalMarks: 10,
+      markSplit: "5 × 2 = 10",
       questions: [
-        { questionNumber: 11, marksObtained: 0, maxMarks: 10, feedback: "The student answer for question 11 is incorrect. It seems to be the answer for a different question." },
-        { questionNumber: 12, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified Computer Vision as the key concept." },
-        { questionNumber: 13, marksObtained: 0, maxMarks: 10, feedback: "The student answer for question 13 is incorrect. It seems to be the answer for question 14." },
+        { questionNumber: 11, marksObtained: 2, maxMarks: 2, feedback: "Correct. Well explained." },
+        { questionNumber: 12, marksObtained: 1, maxMarks: 2, feedback: "Partially correct. Missing key details." },
+        { questionNumber: 13, marksObtained: 2, maxMarks: 2, feedback: "Correct." },
+        { questionNumber: 14, marksObtained: 0, maxMarks: 2, feedback: "Incorrect. The student answer seems to be for a different question." },
+        { questionNumber: 15, marksObtained: 2, maxMarks: 2, feedback: "Correct. The student accurately identified Computer Vision." },
       ],
     },
     {
@@ -61,9 +63,9 @@ const MOCK_RESULT: EvaluationResult = {
       markSplit: "3 × 10 = 30",
       compulsoryQuestions: [16],
       questions: [
-        { questionNumber: 14, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified mobile phones and AR applications." },
-        { questionNumber: 15, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified location-based services." },
-        { questionNumber: 16, marksObtained: 0, maxMarks: 10, feedback: "The student answer is partially correct but lacks depth. Key points about system architecture were missing." },
+        { questionNumber: 16, marksObtained: 5, maxMarks: 10, feedback: "Partially correct but lacks depth. Key points about system architecture were missing. (Compulsory)" },
+        { questionNumber: 17, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified mobile phones and AR applications." },
+        { questionNumber: 18, marksObtained: 8, maxMarks: 10, feedback: "Mostly correct. Minor details about location-based services were missing." },
       ],
     },
   ],
