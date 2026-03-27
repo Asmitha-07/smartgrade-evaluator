@@ -13,17 +13,15 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: string }) {
-  const { user, role, loading } = useAuth();
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Loading…</div>;
-  if (!user) return <Navigate to="/auth" replace />;
+  const { role } = useAuth();
+  if (!role) return <Navigate to="/auth" replace />;
   if (requiredRole && role !== requiredRole) return <Navigate to={role === "staff" ? "/staff" : "/student"} replace />;
   return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, loading } = useAuth();
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Loading…</div>;
-  if (user && role) return <Navigate to={role === "staff" ? "/staff" : "/student"} replace />;
+  const { role } = useAuth();
+  if (role) return <Navigate to={role === "staff" ? "/staff" : "/student"} replace />;
   return <>{children}</>;
 }
 

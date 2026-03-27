@@ -1,55 +1,39 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { getUserRole, type UserRole } from "@/lib/auth";
-import type { User, Session } from "@supabase/supabase-js";
+import { createContext, useContext, useState, type ReactNode } from "react";
+import type { UserRole } from "@/lib/auth";
 
 interface AuthState {
-  user: User | null;
-  session: Session | null;
   role: UserRole | null;
-  loading: boolean;
+  userName: string;
+  login: (role: UserRole, name: string) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthState>({
-  user: null,
-  session: null,
   role: null,
-  loading: true,
+  userName: "",
+  login: () => {},
+  logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    session: null,
-    role: null,
-    loading: true,
-  });
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [userName, setUserName] = useState("");
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          const role = await getUserRole(session.user.id);
-          setState({ user: session.user, session, role, loading: false });
-        } else {
-          setState({ user: null, session: null, role: null, loading: false });
-        }
-      }
-    );
+  const login = (r: UserRole, name: string) => {
+    setRole(r);
+    setUserName(name);
+  };
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const role = await getUserRole(session.user.id);
-        setState({ user: session.user, session, role, loading: false });
-      } else {
-        setState({ user: null, session: null, role: null, loading: false });
-      }
-    });
+  const logout = () => {
+    setRole(null);
+    setUserName("");
+  };
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ role, userName, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);
