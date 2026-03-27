@@ -112,7 +112,7 @@ const StaffDashboard = () => {
             </div>
 
             {uploaded ? (
-              <div className="flex items-center gap-3 rounded-xl border-2 border-green-200 bg-green-50 p-5 text-green-800">
+              <div className="flex items-center gap-3 rounded-xl border-2 border-border bg-accent p-5 text-foreground">
                 <CheckCircle2 className="h-6 w-6 flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Files uploaded successfully!</p>
