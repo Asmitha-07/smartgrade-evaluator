@@ -16,15 +16,9 @@ export async function signUp(email: string, password: string, fullName: string, 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: { data: { full_name: fullName, role } },
   });
   if (error) throw error;
-  if (data.user) {
-    const { error: roleError } = await supabase
-      .from("user_roles")
-      .insert({ user_id: data.user.id, role });
-    if (roleError) throw roleError;
-  }
   return data;
 }
 
