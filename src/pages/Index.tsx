@@ -8,22 +8,65 @@ import ResultsDashboard, { type EvaluationResult } from "@/components/ResultsDas
 import { Button } from "@/components/ui/button";
 
 const MOCK_RESULT: EvaluationResult = {
-  totalMarks: 78,
-  averageScore: 7.8,
-  questions: [
-    { questionNumber: 1, marksAllocated: 9, feedback: "Excellent answer with detailed explanation." },
-    { questionNumber: 2, marksAllocated: 7, feedback: "Good answer but lacks clarity in the second part." },
-    { questionNumber: 3, marksAllocated: 8, feedback: "Well structured response with relevant examples." },
-    { questionNumber: 4, marksAllocated: 6, feedback: "Needs improvement — key concepts were missing." },
-    { questionNumber: 5, marksAllocated: 10, feedback: "Perfect answer. All points covered comprehensively." },
-    { questionNumber: 6, marksAllocated: 5, feedback: "Partially correct. Revisit the core definition." },
-    { questionNumber: 7, marksAllocated: 8, feedback: "Good answer with minor grammatical errors." },
-    { questionNumber: 8, marksAllocated: 7, feedback: "Satisfactory. Could include more examples." },
-    { questionNumber: 9, marksAllocated: 9, feedback: "Excellent depth of understanding demonstrated." },
-    { questionNumber: 10, marksAllocated: 9, feedback: "Very well written and logically organized." },
-  ],
+  totalMarksObtained: 26,
+  maxMarks: 60,
+  averageScore: 1.4,
+  maxAverageScore: 3.2,
+  grade: "D",
+  percentage: 43,
   overallFeedback:
-    "The student demonstrates a strong understanding of the subject matter overall. Areas for improvement include providing clearer definitions (Q4, Q6) and incorporating more real-world examples. The writing quality is commendable.",
+    "Needs significant revision. Review the concepts thoroughly. The student shows partial understanding in some areas but key definitions and explanations are missing or incorrect in several questions.",
+  questionsAttended: 14,
+  totalQuestions: 18,
+  parts: [
+    {
+      name: "Part A",
+      questionsInPaper: 10,
+      questionsToAnswer: 10,
+      marksPerQuestion: 1,
+      totalMarks: 10,
+      markSplit: "10 × 1 = 10",
+      questions: [
+        { questionNumber: 1, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 2, marksObtained: 0, maxMarks: 1, feedback: "Incorrect. The correct answer is B." },
+        { questionNumber: 3, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 4, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 5, marksObtained: 0, maxMarks: 1, feedback: "Incorrect. Review the definition of polymorphism." },
+        { questionNumber: 6, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 7, marksObtained: 0, maxMarks: 1, feedback: "Incorrect." },
+        { questionNumber: 8, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 9, marksObtained: 1, maxMarks: 1, feedback: "Correct." },
+        { questionNumber: 10, marksObtained: 0, maxMarks: 1, feedback: "Incorrect. The answer should be 'encapsulation'." },
+      ],
+    },
+    {
+      name: "Part B",
+      questionsInPaper: 5,
+      questionsToAnswer: 3,
+      marksPerQuestion: 10,
+      totalMarks: 30,
+      markSplit: "3 × 10 = 30",
+      questions: [
+        { questionNumber: 11, marksObtained: 0, maxMarks: 10, feedback: "The student answer for question 11 is incorrect. It seems to be the answer for a different question." },
+        { questionNumber: 12, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified Computer Vision as the key concept." },
+        { questionNumber: 13, marksObtained: 0, maxMarks: 10, feedback: "The student answer for question 13 is incorrect. It seems to be the answer for question 14." },
+      ],
+    },
+    {
+      name: "Part C",
+      questionsInPaper: 4,
+      questionsToAnswer: 3,
+      marksPerQuestion: 10,
+      totalMarks: 30,
+      markSplit: "3 × 10 = 30",
+      compulsoryQuestions: [16],
+      questions: [
+        { questionNumber: 14, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified mobile phones and AR applications." },
+        { questionNumber: 15, marksObtained: 10, maxMarks: 10, feedback: "Correct. The student accurately identified location-based services." },
+        { questionNumber: 16, marksObtained: 0, maxMarks: 10, feedback: "The student answer is partially correct but lacks depth. Key points about system architecture were missing." },
+      ],
+    },
+  ],
 };
 
 const Index = () => {
@@ -46,14 +89,12 @@ const Index = () => {
       formData.append("staffAnswer", staffFile);
       formData.append("studentAnswer", studentFile);
 
-      // Try real backend first; fall back to mock data for demo
       try {
         const res = await fetch("/evaluate", { method: "POST", body: formData });
         if (!res.ok) throw new Error("Backend unavailable");
         const data = await res.json();
         setResult(data);
       } catch {
-        // Simulate network delay then use mock
         await new Promise((r) => setTimeout(r, 2000));
         setResult(MOCK_RESULT);
       }
@@ -66,10 +107,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container mx-auto max-w-2xl px-6 pb-20">
+      <main className="container mx-auto max-w-3xl px-6 pb-20">
         <HeroSection />
 
-        {/* Upload section */}
         <section className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FileUploadCard
@@ -94,14 +134,12 @@ const Index = () => {
           </Button>
         </section>
 
-        {/* Loading */}
         {loading && (
           <section className="mt-12">
             <LoadingIndicator />
           </section>
         )}
 
-        {/* Results */}
         {result && !loading && (
           <section className="mt-12">
             <ResultsDashboard result={result} />
