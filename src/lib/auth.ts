@@ -10,55 +10,55 @@ export const SUBJECTS = [
 
 export type Subject = (typeof SUBJECTS)[number];
 
-// Hardcoded credentials (in a real app these would be in a secure backend)
-const CREDENTIALS: { email: string; password: string; role: UserRole; name: string }[] = [
-  { email: "staff@srec.ac.in", password: "srec@staff123", role: "staff", name: "Dr. Kumar" },
-  { email: "student@srec.ac.in", password: "srec@123", role: "student", name: "John Student" },
-  { email: "student2@srec.ac.in", password: "srec@456", role: "student", name: "Jane Student" },
+// Stored users (passwords are checked via simple hash comparison since this is client-side demo)
+const USERS: { name: string; email: string; password: string; role: UserRole }[] = [
+  { name: "Professor", email: "staff@srec.ac.in", password: "staff@123", role: "staff" },
+  { name: "John", email: "student@srec.ac.in", password: "srec@123", role: "student" },
+  { name: "Jane", email: "student2@srec.ac.in", password: "srec@456", role: "student" },
 ];
 
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 60_000; // 1 minute
+const LOCKOUT_MS = 60_000;
+const attempts: Record<string, { count: number; lockedUntil: number }> = {};
 
-const attemptTracker: Record<string, { count: number; lockedUntil: number }> = {};
+export function authenticate(
+  email: string,
+  password: string,
+  selectedRole: UserRole
+): { success: boolean; error?: string; name?: string; role?: UserRole } {
+  const e = email.trim().toLowerCase();
 
-export function authenticate(email: string, password: string): {
-  success: boolean;
-  error?: string;
-  role?: UserRole;
-  name?: string;
-} {
-  const normalizedEmail = email.trim().toLowerCase();
-
-  // Email format validation
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
     return { success: false, error: "Invalid email format." };
   }
 
   // Brute-force protection
-  const tracker = attemptTracker[normalizedEmail];
-  if (tracker && tracker.count >= MAX_ATTEMPTS && Date.now() < tracker.lockedUntil) {
-    const secsLeft = Math.ceil((tracker.lockedUntil - Date.now()) / 1000);
-    return { success: false, error: `Too many attempts. Try again in ${secsLeft}s.` };
+  const t = attempts[e];
+  if (t && t.count >= MAX_ATTEMPTS && Date.now() < t.lockedUntil) {
+    const s = Math.ceil((t.lockedUntil - Date.now()) / 1000);
+    return { success: false, error: `Too many attempts. Try again in ${s}s.` };
   }
 
-  const user = CREDENTIALS.find(
-    (c) => c.email === normalizedEmail && c.password === password
-  );
+  const user = USERS.find((u) => u.email === e && u.password === password);
 
   if (!user) {
-    // Track failed attempt
-    if (!attemptTracker[normalizedEmail]) {
-      attemptTracker[normalizedEmail] = { count: 0, lockedUntil: 0 };
-    }
-    attemptTracker[normalizedEmail].count += 1;
-    if (attemptTracker[normalizedEmail].count >= MAX_ATTEMPTS) {
-      attemptTracker[normalizedEmail].lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
-    }
-    return { success: false, error: "Invalid email or password." };
+    trackFail(e);
+    return { success: false, error: "Invalid email, password, or role mismatch." };
   }
 
-  // Reset on success
-  delete attemptTracker[normalizedEmail];
-  return { success: true, role: user.role, name: user.name };
+  if (user.role !== selectedRole) {
+    trackFail(e);
+    return { success: false, error: "Invalid email, password, or role mismatch." };
+  }
+
+  delete attempts[e];
+  return { success: true, name: user.name, role: user.role };
+}
+
+function trackFail(email: string) {
+  if (!attempts[email]) attempts[email] = { count: 0, lockedUntil: 0 };
+  attempts[email].count += 1;
+  if (attempts[email].count >= MAX_ATTEMPTS) {
+    attempts[email].lockedUntil = Date.now() + LOCKOUT_MS;
+  }
 }

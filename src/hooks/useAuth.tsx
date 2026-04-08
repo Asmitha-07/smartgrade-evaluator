@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { UserRole } from "@/lib/auth";
 
 interface AuthState {
@@ -16,8 +16,21 @@ const AuthContext = createContext<AuthState>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [userName, setUserName] = useState("");
+  const [role, setRole] = useState<UserRole | null>(() => {
+    const saved = localStorage.getItem("sg_role");
+    return saved === "staff" || saved === "student" ? saved : null;
+  });
+  const [userName, setUserName] = useState(() => localStorage.getItem("sg_name") || "");
+
+  useEffect(() => {
+    if (role) {
+      localStorage.setItem("sg_role", role);
+      localStorage.setItem("sg_name", userName);
+    } else {
+      localStorage.removeItem("sg_role");
+      localStorage.removeItem("sg_name");
+    }
+  }, [role, userName]);
 
   const login = (r: UserRole, name: string) => {
     setRole(r);

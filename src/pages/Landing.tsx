@@ -12,7 +12,7 @@ const Landing = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold text-foreground">SmartGrade</span>
+            <span className="text-lg font-bold text-foreground">ScriptGrade</span>
           </div>
           <Button onClick={() => navigate("/auth")} className="gap-2 font-semibold">
             Get Started <ArrowRight className="h-4 w-4" />
@@ -33,7 +33,7 @@ const Landing = () => {
             <span className="text-primary">Evaluation System</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
-            SmartGrade uses AI to evaluate student answer scripts against faculty answer keys.
+            ScriptGrade uses AI to evaluate student answer scripts against faculty answer keys.
             Get instant marks, detailed feedback, and downloadable reports.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -98,7 +98,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-card/50">
         <div className="container mx-auto px-6 py-8 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} SmartGrade · AI-Based Automated Answer Evaluation System
+          © {new Date().getFullYear()} ScriptGrade · AI-Powered Answer Evaluation System
         </div>
       </footer>
     </div>
