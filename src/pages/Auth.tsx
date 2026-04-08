@@ -115,7 +115,8 @@ const Auth = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">College Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@srec.ac.in" required className="h-11" />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="agalya.2201010@gmail.com" required className="h-11" />
+              <p className="text-xs text-muted-foreground">Format: name.rollnumber@gmail.com</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
@@ -133,8 +134,8 @@ const Auth = () => {
 
           <div className="rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground text-sm mb-2">Demo Credentials</p>
-            <p><span className="font-medium">Staff:</span> staff@srec.ac.in / staff@123</p>
-            <p><span className="font-medium">Student:</span> student@srec.ac.in / srec@123</p>
+            <p><span className="font-medium">Staff:</span> professor.0000001@gmail.com / staff@123</p>
+            <p><span className="font-medium">Student:</span> agalya.2201010@gmail.com / srec@123</p>
           </div>
         </div>
       </div>

@@ -10,11 +10,13 @@ export const SUBJECTS = [
 
 export type Subject = (typeof SUBJECTS)[number];
 
-// Stored users (passwords are checked via simple hash comparison since this is client-side demo)
+// Email format: name.rollnumber@gmail.com
+const EMAIL_REGEX = /^[a-z]+\.\d{7}@gmail\.com$/;
+
 const USERS: { name: string; email: string; password: string; role: UserRole }[] = [
-  { name: "Professor", email: "staff@srec.ac.in", password: "staff@123", role: "staff" },
-  { name: "John", email: "student@srec.ac.in", password: "srec@123", role: "student" },
-  { name: "Jane", email: "student2@srec.ac.in", password: "srec@456", role: "student" },
+  { name: "Professor", email: "professor.0000001@gmail.com", password: "staff@123", role: "staff" },
+  { name: "Agalya", email: "agalya.2201010@gmail.com", password: "srec@123", role: "student" },
+  { name: "John", email: "john.2201020@gmail.com", password: "srec@456", role: "student" },
 ];
 
 const MAX_ATTEMPTS = 5;
@@ -28,8 +30,9 @@ export function authenticate(
 ): { success: boolean; error?: string; name?: string; role?: UserRole } {
   const e = email.trim().toLowerCase();
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
-    return { success: false, error: "Invalid email format." };
+  // Strict email format check
+  if (!EMAIL_REGEX.test(e)) {
+    return { success: false, error: "Invalid email format. Use: name.rollnumber@gmail.com (e.g. agalya.2201010@gmail.com)" };
   }
 
   // Brute-force protection
@@ -41,14 +44,9 @@ export function authenticate(
 
   const user = USERS.find((u) => u.email === e && u.password === password);
 
-  if (!user) {
+  if (!user || user.role !== selectedRole) {
     trackFail(e);
-    return { success: false, error: "Invalid email, password, or role mismatch." };
-  }
-
-  if (user.role !== selectedRole) {
-    trackFail(e);
-    return { success: false, error: "Invalid email, password, or role mismatch." };
+    return { success: false, error: "Invalid email format or credentials." };
   }
 
   delete attempts[e];
