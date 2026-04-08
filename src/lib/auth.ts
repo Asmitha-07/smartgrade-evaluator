@@ -10,14 +10,9 @@ export const SUBJECTS = [
 
 export type Subject = (typeof SUBJECTS)[number];
 
-// Email format: name.rollnumber@gmail.com
-const EMAIL_REGEX = /^[a-z]+\.\d{7}@gmail\.com$/;
-
-const USERS: { name: string; email: string; password: string; role: UserRole }[] = [
-  { name: "Professor", email: "professor.0000001@gmail.com", password: "staff@123", role: "staff" },
-  { name: "Agalya", email: "agalya.2201010@gmail.com", password: "srec@123", role: "student" },
-  { name: "John", email: "john.2201020@gmail.com", password: "srec@456", role: "student" },
-];
+// Email: name.rollnumber@srec.ac.in (lowercase name, exactly 7-digit roll number)
+const EMAIL_REGEX = /^[a-z]+\.\d{7}@srec\.ac\.in$/;
+const FIXED_PASSWORD = "srec@123";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 60_000;
@@ -30,9 +25,8 @@ export function authenticate(
 ): { success: boolean; error?: string; name?: string; role?: UserRole } {
   const e = email.trim().toLowerCase();
 
-  // Strict email format check
   if (!EMAIL_REGEX.test(e)) {
-    return { success: false, error: "Invalid email format. Use: name.rollnumber@gmail.com (e.g. agalya.2201010@gmail.com)" };
+    return { success: false, error: "Invalid college email or password. Email must be: name.rollnumber@srec.ac.in" };
   }
 
   // Brute-force protection
@@ -42,15 +36,17 @@ export function authenticate(
     return { success: false, error: `Too many attempts. Try again in ${s}s.` };
   }
 
-  const user = USERS.find((u) => u.email === e && u.password === password);
-
-  if (!user || user.role !== selectedRole) {
+  if (password !== FIXED_PASSWORD) {
     trackFail(e);
-    return { success: false, error: "Invalid email format or credentials." };
+    return { success: false, error: "Invalid college email or password." };
   }
 
+  // Extract display name from email (capitalize first letter)
+  const rawName = e.split(".")[0];
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
   delete attempts[e];
-  return { success: true, name: user.name, role: user.role };
+  return { success: true, name: displayName, role: selectedRole };
 }
 
 function trackFail(email: string) {
