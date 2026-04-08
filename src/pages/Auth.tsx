@@ -115,7 +115,8 @@ const Auth = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">College Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@srec.ac.in" required className="h-11" />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="agalya.2201010@gmail.com" required className="h-11" />
+              <p className="text-xs text-muted-foreground">Format: name.rollnumber@gmail.com</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
