@@ -134,8 +134,8 @@ const Auth = () => {
 
           <div className="rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground text-sm mb-2">Demo Credentials</p>
-            <p><span className="font-medium">Staff:</span> staff@srec.ac.in / staff@123</p>
-            <p><span className="font-medium">Student:</span> student@srec.ac.in / srec@123</p>
+            <p><span className="font-medium">Staff:</span> professor.0000001@gmail.com / staff@123</p>
+            <p><span className="font-medium">Student:</span> agalya.2201010@gmail.com / srec@123</p>
           </div>
         </div>
       </div>
