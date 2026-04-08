@@ -137,7 +137,7 @@ const Auth = () => {
             <p><span className="font-medium">Email:</span> name.rollnumber@srec.ac.in</p>
             <p><span className="font-medium">Password:</span> srec@123</p>
             <p className="mt-1 text-muted-foreground">Example: agalya.2201010@srec.ac.in</p>
-        </div>
+          </div>
       </div>
     </div>
   );
