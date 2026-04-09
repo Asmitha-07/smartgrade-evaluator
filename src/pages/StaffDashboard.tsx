@@ -35,7 +35,7 @@ const StaffDashboard = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
             <BookOpen className="h-5 w-5 text-primary" />
-            <span className="text-lg font-bold text-foreground">SmartGrade</span>
+            <span className="text-lg font-bold text-foreground">ScriptGrade</span>
             <span className="ml-2 rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">Staff</span>
           </div>
           <div className="flex items-center gap-4">

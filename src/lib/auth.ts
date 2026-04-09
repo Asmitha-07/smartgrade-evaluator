@@ -1,14 +1,44 @@
 export type UserRole = "staff" | "student";
 
-export const SUBJECTS = [
-  "Engineering Mathematics",
-  "Data Structures & Algorithms",
-  "Thermodynamics",
-  "Circuit Theory",
-  "Control Systems",
-] as const;
+export type Semester = "Semester 4" | "Semester 5" | "Semester 6";
 
-export type Subject = (typeof SUBJECTS)[number];
+export interface SubjectInfo {
+  name: string;
+  icon: string; // lucide icon name
+}
+
+export const SEMESTERS: Semester[] = ["Semester 4", "Semester 5", "Semester 6"];
+
+export const SEMESTER_SUBJECTS: Record<Semester, SubjectInfo[]> = {
+  "Semester 4": [
+    { name: "Discrete Mathematics", icon: "Calculator" },
+    { name: "Database Management Systems", icon: "Database" },
+    { name: "Computer Architecture", icon: "Cpu" },
+    { name: "Object Oriented Programming", icon: "Code2" },
+    { name: "Probability & Statistics", icon: "BarChart3" },
+    { name: "Environmental Science", icon: "Leaf" },
+  ],
+  "Semester 5": [
+    { name: "Theory of Computation", icon: "Binary" },
+    { name: "Web Technologies", icon: "Globe" },
+    { name: "Cryptography", icon: "Lock" },
+    { name: "Data Analytics", icon: "LineChart" },
+    { name: "Mobile Computing", icon: "Smartphone" },
+    { name: "Cloud Computing", icon: "Cloud" },
+  ],
+  "Semester 6": [
+    { name: "Artificial Intelligence", icon: "Brain" },
+    { name: "Machine Learning", icon: "Sparkles" },
+    { name: "Computer Networks", icon: "Network" },
+    { name: "Operating Systems", icon: "Monitor" },
+    { name: "Compiler Design", icon: "FileCode2" },
+    { name: "Software Engineering", icon: "Settings" },
+  ],
+};
+
+// Legacy compat
+export const SUBJECTS = SEMESTER_SUBJECTS["Semester 6"].map((s) => s.name) as unknown as readonly string[];
+export type Subject = string;
 
 // Email: name.rollnumber@srec.ac.in (lowercase name, exactly 7-digit roll number)
 const EMAIL_REGEX = /^[a-z]+\.\d{7}@srec\.ac\.in$/;
