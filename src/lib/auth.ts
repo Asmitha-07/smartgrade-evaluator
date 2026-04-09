@@ -1,46 +1,41 @@
 export type UserRole = "staff" | "student";
 
-export type Semester = "Semester 4" | "Semester 5" | "Semester 6";
+export type Semester = "Semester 1" | "Semester 2" | "Semester 3";
 
 export interface SubjectInfo {
   name: string;
-  icon: string; // lucide icon name
+  icon: string;
 }
 
-export const SEMESTERS: Semester[] = ["Semester 4", "Semester 5", "Semester 6"];
+export const SEMESTERS: Semester[] = ["Semester 1", "Semester 2", "Semester 3"];
 
 export const SEMESTER_SUBJECTS: Record<Semester, SubjectInfo[]> = {
-  "Semester 4": [
-    { name: "Discrete Mathematics", icon: "Calculator" },
-    { name: "Database Management Systems", icon: "Database" },
-    { name: "Computer Architecture", icon: "Cpu" },
-    { name: "Object Oriented Programming", icon: "Code2" },
-    { name: "Probability & Statistics", icon: "BarChart3" },
+  "Semester 1": [
+    { name: "Programming in C", icon: "Code2" },
+    { name: "Engineering Mathematics I", icon: "Calculator" },
+    { name: "Digital Logic Design", icon: "Cpu" },
+    { name: "Computer Fundamentals", icon: "Monitor" },
     { name: "Environmental Science", icon: "Leaf" },
   ],
-  "Semester 5": [
-    { name: "Theory of Computation", icon: "Binary" },
-    { name: "Web Technologies", icon: "Globe" },
-    { name: "Cryptography", icon: "Lock" },
-    { name: "Data Analytics", icon: "LineChart" },
-    { name: "Mobile Computing", icon: "Smartphone" },
-    { name: "Cloud Computing", icon: "Cloud" },
+  "Semester 2": [
+    { name: "Data Structures", icon: "Database" },
+    { name: "Engineering Mathematics II", icon: "BarChart3" },
+    { name: "Object-Oriented Programming", icon: "FileCode2" },
+    { name: "Computer Organization", icon: "Cpu" },
+    { name: "Discrete Mathematics", icon: "Binary" },
   ],
-  "Semester 6": [
-    { name: "Artificial Intelligence", icon: "Brain" },
-    { name: "Machine Learning", icon: "Sparkles" },
-    { name: "Computer Networks", icon: "Network" },
+  "Semester 3": [
+    { name: "Database Management Systems", icon: "Database" },
     { name: "Operating Systems", icon: "Monitor" },
-    { name: "Compiler Design", icon: "FileCode2" },
+    { name: "Design and Analysis of Algorithms", icon: "Brain" },
+    { name: "Computer Networks", icon: "Network" },
     { name: "Software Engineering", icon: "Settings" },
   ],
 };
 
-// Legacy compat
-export const SUBJECTS = SEMESTER_SUBJECTS["Semester 6"].map((s) => s.name) as unknown as readonly string[];
+export const SUBJECTS = SEMESTER_SUBJECTS["Semester 3"].map((s) => s.name) as unknown as readonly string[];
 export type Subject = string;
 
-// Email: name.rollnumber@srec.ac.in (lowercase name, exactly 7-digit roll number)
 const EMAIL_REGEX = /^[a-z]+\.\d{7}@srec\.ac\.in$/;
 const FIXED_PASSWORD = "srec@123";
 
@@ -59,7 +54,6 @@ export function authenticate(
     return { success: false, error: "Invalid college email or password. Email must be: name.rollnumber@srec.ac.in" };
   }
 
-  // Brute-force protection
   const t = attempts[e];
   if (t && t.count >= MAX_ATTEMPTS && Date.now() < t.lockedUntil) {
     const s = Math.ceil((t.lockedUntil - Date.now()) / 1000);
@@ -71,7 +65,6 @@ export function authenticate(
     return { success: false, error: "Invalid college email or password." };
   }
 
-  // Extract display name from email (capitalize first letter)
   const rawName = e.split(".")[0];
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
