@@ -109,15 +109,24 @@ const Index = () => {
       formData.append("staffAnswer", staffFile);
       formData.append("studentAnswer", studentFile);
 
-      try {
-        const res = await fetch("/evaluate", { method: "POST", body: formData });
-        if (!res.ok) throw new Error("Backend unavailable");
-        const data = await res.json();
-        setResult(data);
-      } catch {
-        await new Promise((r) => setTimeout(r, 2000));
-        setResult(MOCK_RESULT);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/evaluate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Evaluation failed" }));
+        throw new Error(err.error || "Evaluation failed");
       }
+
+      const data = await res.json();
+      setResult(data);
     } finally {
       setLoading(false);
     }
