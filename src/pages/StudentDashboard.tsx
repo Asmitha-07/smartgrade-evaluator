@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import ResultsDashboard, { type EvaluationResult } from "@/components/ResultsDashboard";
 import LoadingIndicator from "@/components/LoadingIndicator";
+import FileUploadCard from "@/components/FileUploadCard";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Brain: <Brain className="h-5 w-5" />,
@@ -30,44 +31,12 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Binary: <Binary className="h-5 w-5" />,
 };
 
-const MOCK_RESULT: EvaluationResult = {
-  totalMarksObtained: 26, maxMarks: 50, averageScore: 1.4, maxAverageScore: 3.2,
-  grade: "D", percentage: 52,
-  overallFeedback: "Needs significant revision. Review the concepts thoroughly.",
-  questionsAttended: 14, totalQuestions: 18,
-  parts: [
-    { name: "Part A", questionsInPaper: 10, questionsToAnswer: 10, marksPerQuestion: 1, totalMarks: 10, markSplit: "10 × 1 = 10",
-      questions: Array.from({ length: 10 }, (_, i) => ({
-        questionNumber: i + 1,
-        marksObtained: i % 2 === 0 ? 1 : 0,
-        maxMarks: 1,
-        feedback: i % 2 === 0 ? "Correct." : "Incorrect.",
-      })),
-    },
-    { name: "Part B", questionsInPaper: 5, questionsToAnswer: 5, marksPerQuestion: 2, totalMarks: 10, markSplit: "5 × 2 = 10",
-      questions: [
-        { questionNumber: 11, marksObtained: 2, maxMarks: 2, feedback: "Correct." },
-        { questionNumber: 12, marksObtained: 1, maxMarks: 2, feedback: "Partially correct." },
-        { questionNumber: 13, marksObtained: 2, maxMarks: 2, feedback: "Correct." },
-        { questionNumber: 14, marksObtained: 0, maxMarks: 2, feedback: "Incorrect." },
-        { questionNumber: 15, marksObtained: 2, maxMarks: 2, feedback: "Correct." },
-      ],
-    },
-    { name: "Part C", questionsInPaper: 4, questionsToAnswer: 3, marksPerQuestion: 10, totalMarks: 30, markSplit: "3 × 10 = 30", compulsoryQuestions: [16],
-      questions: [
-        { questionNumber: 16, marksObtained: 5, maxMarks: 10, feedback: "Partially correct. (Compulsory)" },
-        { questionNumber: 17, marksObtained: 10, maxMarks: 10, feedback: "Excellent." },
-        { questionNumber: 18, marksObtained: 8, maxMarks: 10, feedback: "Mostly correct." },
-      ],
-    },
-  ],
-};
-
 const StudentDashboard = () => {
   const { userName, logout, login } = useAuth();
   const navigate = useNavigate();
   const [semester, setSemester] = useState<Semester>("Semester 1");
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [staffAnswer, setStaffAnswer] = useState<File | null>(null);
   const [answerScript, setAnswerScript] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EvaluationResult | null>(null);
@@ -78,19 +47,49 @@ const StudentDashboard = () => {
   const handleSelectSubject = (subject: SubjectInfo) => {
     setSelectedSubject(subject.name);
     setResult(null);
+    setStaffAnswer(null);
     setAnswerScript(null);
   };
 
   const handleEvaluate = async () => {
-    if (!answerScript || !selectedSubject) {
-      toast.error("Please upload your answer script.");
+    if (!staffAnswer || !answerScript || !selectedSubject) {
+      toast.error("Please upload both the staff answer key and your answer script.");
       return;
     }
     setLoading(true);
     setResult(null);
-    await new Promise((r) => setTimeout(r, 2500));
-    setResult(MOCK_RESULT);
-    setLoading(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("staffAnswer", staffAnswer);
+      formData.append("studentAnswer", answerScript);
+      formData.append("subject", selectedSubject);
+      formData.append("semester", semester);
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/evaluate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Evaluation failed" }));
+        throw new Error(err.error || "Evaluation failed");
+      }
+
+      const data: EvaluationResult = await res.json();
+      setResult(data);
+      toast.success("Evaluation complete!");
+    } catch (err: any) {
+      toast.error(err?.message || "Evaluation failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subjects = SEMESTER_SUBJECTS[semester];
@@ -126,7 +125,7 @@ const StudentDashboard = () => {
             Student Dashboard
           </h1>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Select your semester and subject, upload your answer script, and get instant AI evaluation.
+            Select your semester and subject, upload both the staff answer key and your answer script, and get instant AI evaluation.
           </p>
         </section>
 
@@ -140,6 +139,7 @@ const StudentDashboard = () => {
                   setSemester(sem);
                   setSelectedSubject(null);
                   setResult(null);
+                  setStaffAnswer(null);
                   setAnswerScript(null);
                 }}
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-all sm:px-6 ${
@@ -176,7 +176,7 @@ const StudentDashboard = () => {
 
         {/* ── Upload Section ── */}
         {selectedSubject && !result && !loading && (
-          <div className="mx-auto max-w-lg space-y-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+          <div className="mx-auto max-w-2xl space-y-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">{selectedSubject}</h2>
               <Button
@@ -188,26 +188,26 @@ const StudentDashboard = () => {
                 ← Back
               </Button>
             </div>
-            <label
-              htmlFor="answer-script"
-              className="group flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border bg-card px-6 py-14 transition-all hover:border-primary/40 hover:bg-primary/5"
-            >
-              <Upload className="h-10 w-10 text-muted-foreground transition-colors group-hover:text-primary" />
-              <span className="text-sm font-semibold text-foreground">Upload Answer Script</span>
-              {answerScript ? (
-                <span className="max-w-full truncate text-xs font-medium text-primary">{answerScript.name}</span>
-              ) : (
-                <span className="text-xs text-muted-foreground">Click to browse · PDF only</span>
-              )}
-              <input
-                id="answer-script"
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) setAnswerScript(f); }}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FileUploadCard
+                label="Staff (Reference) Answer Key"
+                file={staffAnswer}
+                onFileSelect={setStaffAnswer}
               />
-            </label>
-            <Button onClick={handleEvaluate} disabled={!answerScript} size="lg" className="w-full font-semibold">
+              <FileUploadCard
+                label="Your Answer Script"
+                file={answerScript}
+                onFileSelect={setAnswerScript}
+              />
+            </div>
+
+            <Button
+              onClick={handleEvaluate}
+              disabled={!staffAnswer || !answerScript}
+              size="lg"
+              className="w-full font-semibold"
+            >
               Start Evaluation
             </Button>
           </div>
@@ -221,7 +221,7 @@ const StudentDashboard = () => {
             <div className="mt-6">
               <Button
                 variant="outline"
-                onClick={() => { setResult(null); setAnswerScript(null); setSelectedSubject(null); }}
+                onClick={() => { setResult(null); setStaffAnswer(null); setAnswerScript(null); setSelectedSubject(null); }}
                 className="w-full"
               >
                 Evaluate Another Script
