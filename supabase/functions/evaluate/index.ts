@@ -14,6 +14,8 @@ Deno.serve(async (req) => {
     const formData = await req.formData();
     const staffFile = formData.get("staffAnswer") as File | null;
     const studentFile = formData.get("studentAnswer") as File | null;
+    const subject = formData.get("subject") as string | null;
+    const semester = formData.get("semester") as string | null;
 
     if (!staffFile || !studentFile) {
       return new Response(
@@ -22,9 +24,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract text from PDFs using pdf-parse
+    // Extract text from PDFs independently - no caching
+    console.log(`[evaluate] Processing: subject=${subject}, semester=${semester}`);
+    console.log(`[evaluate] Staff file: ${staffFile.name} (${staffFile.size} bytes)`);
+    console.log(`[evaluate] Student file: ${studentFile.name} (${studentFile.size} bytes)`);
+
     const staffText = await extractTextFromPdf(staffFile);
     const studentText = await extractTextFromPdf(studentFile);
+
+    console.log(`[evaluate] Staff text length: ${staffText.length} chars`);
+    console.log(`[evaluate] Student text length: ${studentText.length} chars`);
+    console.log(`[evaluate] Staff text preview: ${staffText.substring(0, 200)}`);
+    console.log(`[evaluate] Student text preview: ${studentText.substring(0, 200)}`);
 
     if (!staffText.trim() || !studentText.trim()) {
       return new Response(
@@ -38,18 +49,18 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Call Lovable AI for evaluation
-    const evaluationResult = await evaluateWithAI(staffText, studentText, LOVABLE_API_KEY);
+    // Call AI for evaluation - fresh call every time, no caching
+    const evaluationResult = await evaluateWithAI(staffText, studentText, LOVABLE_API_KEY, subject || "Unknown Subject");
+
+    console.log(`[evaluate] Result: marks=${evaluationResult.totalMarksObtained}/${evaluationResult.maxMarks}, grade=${evaluationResult.grade}`);
 
     return new Response(JSON.stringify(evaluationResult), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("evaluate error:", e);
-
     const status = (e as any)?.status || 500;
     const message = e instanceof Error ? e.message : "Unknown error";
-
     return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -59,31 +70,27 @@ Deno.serve(async (req) => {
 
 // ─── PDF Text Extraction ───
 async function extractTextFromPdf(file: File): Promise<string> {
-  // Read raw bytes and do a basic text extraction from PDF
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
-  const text = extractTextFromPdfBytes(bytes);
-  return text;
+  return extractTextFromPdfBytes(bytes);
 }
 
 function extractTextFromPdfBytes(bytes: Uint8Array): string {
-  // Decode the PDF as latin1 to preserve byte values
   const raw = new TextDecoder("latin1").decode(bytes);
-
   const textParts: string[] = [];
 
-  // Strategy 1: Extract text between BT...ET blocks (standard PDF text objects)
+  // Strategy 1: BT...ET blocks
   const btEtRegex = /BT\s([\s\S]*?)ET/g;
   let match;
   while ((match = btEtRegex.exec(raw)) !== null) {
     const block = match[1];
-    // Extract text from Tj, TJ, ', " operators
+    // Tj operator
     const tjRegex = /\(([^)]*)\)\s*Tj/g;
     let tjMatch;
     while ((tjMatch = tjRegex.exec(block)) !== null) {
       textParts.push(decodePdfString(tjMatch[1]));
     }
-    // TJ arrays: [(text) kerning (text) ...]
+    // TJ arrays
     const tjArrayRegex = /\[((?:\([^)]*\)|[^[\]])*)\]\s*TJ/g;
     let arrMatch;
     while ((arrMatch = tjArrayRegex.exec(block)) !== null) {
@@ -93,15 +100,20 @@ function extractTextFromPdfBytes(bytes: Uint8Array): string {
         textParts.push(decodePdfString(innerMatch[1]));
       }
     }
+    // ' and " operators (text showing with line advance)
+    const quoteRegex = /\(([^)]*)\)\s*['"]/g;
+    let qMatch;
+    while ((qMatch = quoteRegex.exec(block)) !== null) {
+      textParts.push(decodePdfString(qMatch[1]));
+    }
   }
 
-  // Strategy 2: If BT/ET extraction yielded very little, try stream decoding
+  // Strategy 2: stream content fallback
   if (textParts.join("").trim().length < 50) {
     const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
     let sMatch;
     while ((sMatch = streamRegex.exec(raw)) !== null) {
       const streamContent = sMatch[1];
-      // Try to find readable ASCII text in the stream
       const readable = streamContent.replace(/[^\x20-\x7E\n\r\t]/g, " ");
       const words = readable.match(/[a-zA-Z]{2,}/g);
       if (words && words.length > 3) {
@@ -111,7 +123,6 @@ function extractTextFromPdfBytes(bytes: Uint8Array): string {
   }
 
   let result = textParts.join(" ");
-  // Clean up
   result = result.replace(/\s+/g, " ").trim();
   return result;
 }
@@ -130,16 +141,38 @@ function decodePdfString(s: string): string {
 async function evaluateWithAI(
   staffText: string,
   studentText: string,
-  apiKey: string
+  apiKey: string,
+  subject: string
 ) {
-  const systemPrompt = `You are ScriptGrade, an expert academic answer evaluator. You compare a student's answer script against a reference (staff) answer key and produce a structured evaluation.
+  const systemPrompt = `You are ScriptGrade, an expert academic answer evaluator for the subject "${subject}". You compare a student's answer script against a reference (staff) answer key and produce a structured evaluation.
 
-IMPORTANT INSTRUCTIONS:
-1. Identify individual questions from both texts. Match them by question number.
-2. For each question, evaluate the student's answer against the reference answer using semantic understanding.
-3. Assign marks based on conceptual accuracy, keyword coverage, and completeness.
-4. Group questions into parts (Part A, Part B, Part C) based on mark weightage patterns you detect.
-5. Provide detailed, constructive, student-friendly feedback.
+CRITICAL INSTRUCTIONS — READ CAREFULLY:
+1. You MUST analyze the ACTUAL TEXT provided below. Do NOT generate generic or placeholder results.
+2. Identify individual questions from BOTH texts. Match them by question number (Q1, Q2, Q3, etc., or numbered items).
+3. For EACH question, compare the student's specific answer against the staff's specific reference answer.
+4. Assign marks based on:
+   - Conceptual accuracy (does the student's answer convey the correct meaning?)
+   - Keyword coverage (are important technical terms present?)
+   - Completeness (does the answer cover all required points?)
+5. Group questions into parts based on mark weightage:
+   - Part A: Short/objective questions (typically 1 mark each)
+   - Part B: Medium questions (typically 2 marks each)
+   - Part C: Long/essay questions (typically 10 marks each)
+6. If you cannot clearly identify parts, group all questions under "Part A".
+
+FEEDBACK REQUIREMENTS (VERY IMPORTANT):
+For EACH question provide:
+- overallAssessment: "Excellent" (80-100%) | "Good" (60-79%) | "Average" (40-59%) | "Needs Improvement" (<40%)
+- strengths: What the student got right (be specific to their actual answer)
+- mistakes: What they got wrong or missed (reference specific content from the staff answer)
+- suggestions: Actionable improvement advice
+- modelAnswer: A brief 2-3 line correct answer based on the staff answer key
+- missingKeywords: Important terms from the staff answer that the student missed
+
+KEYWORD DETECTION:
+- Extract key technical terms from the staff answer for each question
+- Check which of these appear in the student's answer
+- List missing ones in missingKeywords
 
 You MUST respond with ONLY a valid JSON object (no markdown, no code fences) matching this exact structure:
 
@@ -150,7 +183,7 @@ You MUST respond with ONLY a valid JSON object (no markdown, no code fences) mat
   "maxAverageScore": number,
   "grade": "A+" | "A" | "B" | "C" | "D" | "F",
   "percentage": number,
-  "overallFeedback": "string (2-3 sentences summarizing performance)",
+  "overallFeedback": "string (2-3 sentences summarizing performance with specific observations)",
   "questionsAttended": number,
   "totalQuestions": number,
   "parts": [
@@ -167,13 +200,13 @@ You MUST respond with ONLY a valid JSON object (no markdown, no code fences) mat
           "questionNumber": number,
           "marksObtained": number,
           "maxMarks": number,
-          "feedback": "short 1-line feedback",
+          "feedback": "short 1-line feedback specific to this answer",
           "detailedFeedback": {
             "overallAssessment": "Excellent" | "Good" | "Average" | "Needs Improvement",
-            "strengths": ["what the student did well"],
+            "strengths": ["specific things the student did well"],
             "mistakes": ["specific errors or missing points"],
             "suggestions": ["actionable improvement advice"],
-            "modelAnswer": "brief ideal answer (optional)",
+            "modelAnswer": "brief ideal answer from the staff key",
             "missingKeywords": ["important terms the student missed"]
           }
         }
@@ -190,15 +223,21 @@ Grading scale:
 - 50-59%: D
 - Below 50%: F
 
-Be encouraging but honest. Identify strengths before pointing out mistakes.`;
+IMPORTANT: Different PDFs MUST produce different results. Base your evaluation ENTIRELY on the actual text content provided.`;
 
-  const userPrompt = `## REFERENCE ANSWER KEY (Staff):
+  const userPrompt = `## REFERENCE ANSWER KEY (Staff) for ${subject}:
+---
 ${staffText.substring(0, 15000)}
+---
 
 ## STUDENT ANSWER SCRIPT:
+---
 ${studentText.substring(0, 15000)}
+---
 
-Evaluate the student's answers against the reference and return the structured JSON evaluation.`;
+Analyze the above texts carefully. Identify each question, compare the student's answer to the reference, and return the structured JSON evaluation. Every score and feedback item must reflect the ACTUAL content of these specific documents.`;
+
+  console.log(`[evaluate] Calling AI with staff text (${staffText.length} chars) and student text (${studentText.length} chars)`);
 
   const response = await fetch(GATEWAY_URL, {
     method: "POST",
@@ -234,11 +273,11 @@ Evaluate the student's answers against the reference and return the structured J
     throw new Error("AI returned empty response");
   }
 
-  // Parse JSON from AI response (strip markdown fences if present)
   const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-  
+
   try {
     const result = JSON.parse(cleaned);
+    console.log(`[evaluate] Parsed result: ${result.parts?.length || 0} parts, ${result.totalMarksObtained}/${result.maxMarks}`);
     return result;
   } catch (parseErr) {
     console.error("Failed to parse AI response:", cleaned.substring(0, 500));
