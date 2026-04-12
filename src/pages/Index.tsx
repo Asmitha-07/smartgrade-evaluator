@@ -127,6 +127,8 @@ const Index = () => {
 
       const data = await res.json();
       setResult(data);
+    } catch (err: any) {
+      toast.error(err?.message || "Evaluation failed. Please try again.");
     } finally {
       setLoading(false);
     }
