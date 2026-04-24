@@ -189,12 +189,7 @@ const StudentDashboard = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FileUploadCard
-                label="Staff (Reference) Answer Key"
-                file={staffAnswer}
-                onFileSelect={setStaffAnswer}
-              />
+            <div className="mx-auto max-w-md">
               <FileUploadCard
                 label="Your Answer Script"
                 file={answerScript}
@@ -204,7 +199,7 @@ const StudentDashboard = () => {
 
             <Button
               onClick={handleEvaluate}
-              disabled={!staffAnswer || !answerScript}
+              disabled={!answerScript}
               size="lg"
               className="w-full font-semibold"
             >
