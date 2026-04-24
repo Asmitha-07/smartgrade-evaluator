@@ -52,8 +52,8 @@ const StudentDashboard = () => {
   };
 
   const handleEvaluate = async () => {
-    if (!staffAnswer || !answerScript || !selectedSubject) {
-      toast.error("Please upload both the staff answer key and your answer script.");
+    if (!answerScript || !selectedSubject) {
+      toast.error("Please upload your answer script.");
       return;
     }
     setLoading(true);
