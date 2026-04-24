@@ -61,7 +61,7 @@ const StudentDashboard = () => {
 
     try {
       const formData = new FormData();
-      formData.append("staffAnswer", staffAnswer);
+      if (staffAnswer) formData.append("staffAnswer", staffAnswer);
       formData.append("studentAnswer", answerScript);
       formData.append("subject", selectedSubject);
       formData.append("semester", semester);
