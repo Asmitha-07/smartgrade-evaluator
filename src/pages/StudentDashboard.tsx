@@ -52,8 +52,8 @@ const StudentDashboard = () => {
   };
 
   const handleEvaluate = async () => {
-    if (!staffAnswer || !answerScript || !selectedSubject) {
-      toast.error("Please upload both the staff answer key and your answer script.");
+    if (!answerScript || !selectedSubject) {
+      toast.error("Please upload your answer script.");
       return;
     }
     setLoading(true);
@@ -61,7 +61,7 @@ const StudentDashboard = () => {
 
     try {
       const formData = new FormData();
-      formData.append("staffAnswer", staffAnswer);
+      if (staffAnswer) formData.append("staffAnswer", staffAnswer);
       formData.append("studentAnswer", answerScript);
       formData.append("subject", selectedSubject);
       formData.append("semester", semester);
@@ -189,12 +189,7 @@ const StudentDashboard = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FileUploadCard
-                label="Staff (Reference) Answer Key"
-                file={staffAnswer}
-                onFileSelect={setStaffAnswer}
-              />
+            <div className="mx-auto max-w-md">
               <FileUploadCard
                 label="Your Answer Script"
                 file={answerScript}
@@ -204,7 +199,7 @@ const StudentDashboard = () => {
 
             <Button
               onClick={handleEvaluate}
-              disabled={!staffAnswer || !answerScript}
+              disabled={!answerScript}
               size="lg"
               className="w-full font-semibold"
             >
