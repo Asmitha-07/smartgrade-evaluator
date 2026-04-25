@@ -223,7 +223,8 @@ Grading scale:
 
 IMPORTANT: Different PDFs MUST produce different results. Base your evaluation ENTIRELY on the actual text content provided.`;
 
-  const userPrompt = `## REFERENCE ANSWER KEY (Staff) for ${subject}:
+  const userPrompt = staffText.trim()
+    ? `## REFERENCE ANSWER KEY (Staff) for ${subject}:
 ---
 ${staffText.substring(0, 15000)}
 ---
@@ -233,7 +234,21 @@ ${staffText.substring(0, 15000)}
 ${studentText.substring(0, 15000)}
 ---
 
-Analyze the above texts carefully. Identify each question, compare the student's answer to the reference, and return the structured JSON evaluation. Every score and feedback item must reflect the ACTUAL content of these specific documents.`;
+Analyze the above texts carefully. Identify each question, compare the student's answer to the reference, and return the structured JSON evaluation. Every score and feedback item must reflect the ACTUAL content of these specific documents.`
+    : `## SUBJECT: ${subject}
+No staff answer key was provided. Use your expert knowledge of "${subject}" to determine the correct answers for each question found in the student script.
+
+## STUDENT ANSWER SCRIPT:
+---
+${studentText.substring(0, 15000)}
+---
+
+Carefully read the student script. Identify each question (Q1, Q2, ...) and the student's answer to it. For each question:
+1. Determine the correct answer using your expert knowledge of ${subject}.
+2. Compare the student's answer against this correct answer.
+3. Score, give feedback, list missing keywords, and provide a model answer.
+
+Return the structured JSON evaluation. Every score and feedback item MUST reflect the ACTUAL content of this specific student script — different scripts must produce different results.`;
 
   console.log(`[evaluate] Calling AI with staff text (${staffText.length} chars) and student text (${studentText.length} chars)`);
 
