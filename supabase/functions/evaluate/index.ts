@@ -17,29 +17,27 @@ Deno.serve(async (req) => {
     const subject = formData.get("subject") as string | null;
     const semester = formData.get("semester") as string | null;
 
-    if (!staffFile || !studentFile) {
+    if (!studentFile) {
       return new Response(
-        JSON.stringify({ error: "Both staffAnswer and studentAnswer PDF files are required." }),
+        JSON.stringify({ error: "studentAnswer PDF file is required." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Extract text from PDFs independently - no caching
     console.log(`[evaluate] Processing: subject=${subject}, semester=${semester}`);
-    console.log(`[evaluate] Staff file: ${staffFile.name} (${staffFile.size} bytes)`);
     console.log(`[evaluate] Student file: ${studentFile.name} (${studentFile.size} bytes)`);
+    if (staffFile) console.log(`[evaluate] Staff file: ${staffFile.name} (${staffFile.size} bytes)`);
 
-    const staffText = await extractTextFromPdf(staffFile);
     const studentText = await extractTextFromPdf(studentFile);
+    const staffText = staffFile ? await extractTextFromPdf(staffFile) : "";
 
-    console.log(`[evaluate] Staff text length: ${staffText.length} chars`);
     console.log(`[evaluate] Student text length: ${studentText.length} chars`);
-    console.log(`[evaluate] Staff text preview: ${staffText.substring(0, 200)}`);
+    console.log(`[evaluate] Staff text length: ${staffText.length} chars`);
     console.log(`[evaluate] Student text preview: ${studentText.substring(0, 200)}`);
 
-    if (!staffText.trim() || !studentText.trim()) {
+    if (!studentText.trim()) {
       return new Response(
-        JSON.stringify({ error: "Could not extract text from one or both PDFs. Ensure they contain readable text (not scanned images)." }),
+        JSON.stringify({ error: "Could not extract text from the student PDF. Ensure it contains readable text (not scanned images)." }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
